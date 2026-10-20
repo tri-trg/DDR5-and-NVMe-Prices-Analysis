@@ -40,4 +40,8 @@
 
 2. Download the dataset to `data/raw/` and verify the SHA-256 hash.
 
+    ```bash
+    python src/fetch_data.py
+    ```
+
 3. Execute the notebooks in order: `01_...ipynb`, `02_q1_...`,...
