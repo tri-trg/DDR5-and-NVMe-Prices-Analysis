@@ -1,0 +1,15 @@
+name: ddr5-nvme
+channels: [conda-forge]
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - matplotlib
+  - scipy
+  - statsmodels
+  - scikit-learn
+  - jupyter
+  - requests
+  - pip
+  - pip:
+      - kaggle
