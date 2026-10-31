@@ -49,16 +49,36 @@ class RowLog:
 # Flags
 # --------------------------------------------------------------------------- #
 # Wording typical of complete computers rather than loose RAM / SSD parts.
-# NOTE: plain "laptop" is NOT used on its own because many legitimate DDR5
-# SO-DIMM titles say "for Laptop". The flag therefore also requires the row to
-# be unresolved (see add_flags), matching the data card's finding that all 17
-# noise observations have unresolved capacity.
+# Checked against the real data: the 5 titles below (17 rows) are the complete computers in DDR5, e.g.
+#   "GEEKOM A8 Mini PC, Ryzen 7 8745HS, 16GB DDR5 ...", "Dell 15.6" ... Laptop Computer, 16GB DDR5 RAM ...",
+#   "Dell Desktop Computers, Intel 20-Core i7-14700 ...", "MINISFORUM DeskMini UM760 Slim Mini PC ...",
+#   "CWWK Firewall Mini PC Intel N Series N100 ...".
+# Plain "laptop" is NOT used on its own because many legitimate SO-DIMM titles say "for Laptop", and
+# compatibility mentions such as "AMD Ryzen 7000" or "13th Gen Intel Core" must not match. As a second
+# safeguard the flag also requires the row to be unresolved (see add_flags), as in the data card.
 _SYSTEM_PATTERN = re.compile(
     r"(?:mini[\s-]?pc|desktop (?:computer|pc)|gaming (?:pc|desktop|laptop)|laptop computer|"
-    r"all[\s-]in[\s-]one|notebook computer|intel core i[3579]|ryzen [3579]|"
-    r"windows 1[01]|\bwi-?fi\b|\bnuc\b)",
+    r"all[\s-]in[\s-]one|notebook computer|intel core i[3579]\b|ryzen [3579]\s|"
+    r"\bwindows 1[01]\b|\bwi-?fi\b|\bnuc\b)",
     flags=re.IGNORECASE,
 )
+
+# Wording that only a real memory module has. A title with any of these is never "a complete computer",
+# even if it says "Laptop Computer RAM" (e.g. "A-Tech ... SO-DIMM 262-Pin Laptop Computer RAM Memory Upgrade Module").
+_MODULE_GUARD = re.compile(
+    r"(?:so-?dimm|u-?dimm|\bdimm\b|\bpc5-\d{4,5}|\b\d{3}-pin|ram memory|memory (?:kit|module|upgrade))",
+    flags=re.IGNORECASE,
+)
+
+# NAS boxes sit in the DDR5 category WITH a resolved capacity (they quote the RAM inside), so the data
+# card's 17-row check (which needs an unresolved capacity) does not see them. Real examples:
+#   "Asustor Lockerstor 10 Gen3 AS6810T 10 Bay NAS ... 16GB ECC DDR5 RAM ... (Diskless)"  (3 rows)
+#   "TERRAMASTER F8 SSD Plus NAS - 8Bay All SSD NAS Storage ... 16GB DDR5 RAM ... (Diskless)"  (8 rows)
+# The bare word "NAS" is deliberately NOT enough: a genuine RAM module can say "for Synology NAS".
+_NAS_PATTERN = re.compile(r"(?:\b\d+[\s-]?bay\b|\bdiskless\b|network attached storage)", flags=re.IGNORECASE)
+
+# What the full dataset contains (verified on the real CSV); used by check_noise_flags().
+NOISE_EXPECTED = {"system_rows": 17, "system_titles": 5, "nas_rows": 11, "nas_titles": 2}
 
 SERIES_SHORT = {"ddr5_memory": "DDR5", "nvme_ssd": "NVMe"}
 
@@ -70,7 +90,9 @@ def add_flags(df: pd.DataFrame) -> pd.DataFrame:
     -------------
     category          'DDR5' or 'NVMe' (short label of series_id)
     is_unresolved     quantity unknown / 0 -> normalised price is blank
-    is_system_noise   DDR5 row that looks like a complete laptop/desktop/mini-PC
+    is_system_noise   DDR5 row that looks like a complete laptop/desktop/mini-PC (data card: 17 rows)
+    is_nas_noise      DDR5 row that is a NAS box (found by us; resolved capacity, so not in the 17)
+    is_noise          is_system_noise or is_nas_noise  (rows that are not memory modules)
     price_per_unit_recomputed
                       price_amount / quantity (USD per GB for DDR5, per TB for NVMe);
                       NaN when capacity unresolved. Used to cross-check the
@@ -84,8 +106,11 @@ def add_flags(df: pd.DataFrame) -> pd.DataFrame:
     out["is_unresolved"] = (unit == "unknown") | (qty == 0)
 
     is_ddr5 = out["series_id"].astype(str) == "ddr5_memory"
-    looks_like_system = out["product_name"].astype(str).str.contains(_SYSTEM_PATTERN)
+    names = out["product_name"].astype(str)
+    looks_like_system = names.str.contains(_SYSTEM_PATTERN) & ~names.str.contains(_MODULE_GUARD)
     out["is_system_noise"] = is_ddr5 & out["is_unresolved"] & looks_like_system
+    out["is_nas_noise"] = is_ddr5 & names.str.contains(_NAS_PATTERN)
+    out["is_noise"] = out["is_system_noise"] | out["is_nas_noise"]
 
     # Recompute price per target unit (GB for DDR5, TB for NVMe; 1,000 GB = 1 TB).
     qty_gb = np.where(unit == "gigabytes", qty,
@@ -153,7 +178,7 @@ def analysis_view(
     df: pd.DataFrame,
     log: RowLog | None = None,
     drop_unresolved: bool = True,
-    drop_system_noise: bool = True,
+    drop_noise: bool = True,
 ) -> pd.DataFrame:
     """Return the rows suitable for price-per-capacity analysis.
 
@@ -163,11 +188,11 @@ def analysis_view(
     """
     log = log or RowLog()
     out = df
-    if drop_system_noise:
+    if drop_noise:
         out = log.step(
-            out, "drop complete-system rows (DDR5 category noise)",
-            lambda d: d[~d["is_system_noise"]],
-            reason="laptop/desktop/mini-PC listings are not memory modules",
+            out, "drop complete-system / NAS rows (DDR5 category noise)",
+            lambda d: d[~d["is_noise"]],
+            reason="laptop/desktop/mini-PC and NAS listings are not memory modules",
         )
     if drop_unresolved:
         out = log.step(
@@ -176,6 +201,25 @@ def analysis_view(
             reason="quantity unknown -> normalised price blank, cannot compare per GB/TB",
         )
     return out
+
+
+def check_noise_flags(df: pd.DataFrame) -> pd.DataFrame:
+    """Compare the noise flags with what the FULL real dataset contains.
+
+    Only meaningful on the complete data (a ZIP sample has fewer rows). Never raises.
+    """
+    sysn, nas = df[df["is_system_noise"]], df[df["is_nas_noise"]]
+    rows = [
+        ("system-noise rows (data card: 17)", NOISE_EXPECTED["system_rows"], len(sysn)),
+        ("system-noise titles (data card: 5)", NOISE_EXPECTED["system_titles"], sysn["product_name"].nunique()),
+        ("NAS rows", NOISE_EXPECTED["nas_rows"], len(nas)),
+        ("NAS titles", NOISE_EXPECTED["nas_titles"], nas["product_name"].nunique()),
+        ("DDR5 rows unresolved but NOT flagged", 0,
+         int(((df["series_id"].astype(str) == "ddr5_memory") & df["is_unresolved"] & ~df["is_system_noise"]).sum())),
+    ]
+    t = pd.DataFrame(rows, columns=["check", "expected (full data)", "actual"])
+    t["ok"] = t["expected (full data)"] == t["actual"]
+    return t
 
 
 def basic_quality_report(df: pd.DataFrame) -> pd.DataFrame:
@@ -194,5 +238,6 @@ def basic_quality_report(df: pd.DataFrame) -> pd.DataFrame:
         ),
         "unresolved capacity": int(df["is_unresolved"].sum()) if "is_unresolved" in df else np.nan,
         "system-noise rows": int(df["is_system_noise"].sum()) if "is_system_noise" in df else np.nan,
+        "NAS-noise rows": int(df["is_nas_noise"].sum()) if "is_nas_noise" in df else np.nan,
     }
     return pd.DataFrame({"check": list(checks), "count": list(checks.values())})
