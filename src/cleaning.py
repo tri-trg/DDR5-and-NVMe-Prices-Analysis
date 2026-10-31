@@ -58,8 +58,8 @@ class RowLog:
 # safeguard the flag also requires the row to be unresolved (see add_flags), as in the data card.
 _SYSTEM_PATTERN = re.compile(
     r"(?:mini[\s-]?pc|desktop (?:computer|pc)|gaming (?:pc|desktop|laptop)|laptop computer|"
-    r"all[\s-]in[\s-]one|notebook computer|intel core i[3579]\b|ryzen [3579]\s|"
-    r"\bwindows 1[01]\b|\bwi-?fi\b|\bnuc\b)",
+    r"all[\s-]in[\s-]one|notebook computer|\bintel core i[3579]\b|\bryzen\s+[3579]\b|"
+    r"windows 1[01]|\bwi-?fi\b|\bnuc\b)",
     flags=re.IGNORECASE,
 )
 
