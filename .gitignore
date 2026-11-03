@@ -24,6 +24,7 @@ htmlcov/
 #Jupyter Notebook
 .ipynb_checkpoints
 ipython_config.py
+.matplotlib/
 
 #Environments
 .env
