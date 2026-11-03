@@ -33,8 +33,13 @@ env/
 venv/
 ENV/
 
-#Visual Studio Code
+#IDE & Editors
 .vscode/
+.idea/
+*.iml
+*.xml
 
 #Windows OS
 Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
