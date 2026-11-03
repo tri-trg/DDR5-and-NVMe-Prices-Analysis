@@ -9,6 +9,7 @@ dependencies:
   - statsmodels
   - scikit-learn
   - jupyter
+  - seaborn
   - requests
   - pip
   - pip:
