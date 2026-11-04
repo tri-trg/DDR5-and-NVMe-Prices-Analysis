@@ -22,7 +22,7 @@ _SODIMM_PATTERN = re.compile(
 )
 
 _NAS_PATTERN = re.compile(
-    r"(?:\bNAS\b|Network\s+Attached\s+Storage|Diskless)",
+    r"(?:\b\d+[\s-]?bay\b|\bdiskless\b|network\s+attached\s+storage)",
     flags=re.IGNORECASE,
 )
 
