@@ -28,6 +28,7 @@
 ## Key Findings
 
 * **Q3 (preliminary):** After matching product title and date, ZIP-level adjusted price indices vary by only about −0.046% to +0.036% for DDR5 and −0.018% to +0.041% for NVMe. Income correlations are positive but uncertain across 12 ZIPs (Pearson *r*=0.319 for DDR5 and 0.373 for NVMe; both *p*>0.05). Treat this as a descriptive association, not causal evidence. See [the Q3 notebook](notebooks/02_q3_income_prices.ipynb) for methods, sensitivity checks, and limitations.
+* **Q4:** Within product × ZIP cohorts observed on at least three dates, DDR5 has higher typical volatility than NVMe: median daily-price standard deviation is **$4.74 vs. effectively $0**, and median coefficient of variation is **1.29% vs. 0%**. The directional difference is consistent across all 12 ZIP markets, but this is descriptive evidence from a 29-day snapshot. See [the Q4 notebook](notebooks/02_q4_day_to_day_volatility.ipynb) for cohort construction, tests, and ZIP-level results.
 
 ## How to Run
 
@@ -44,6 +45,6 @@
     python src/fetch_data.py
     ```
 
-3. Execute the notebooks from the repository root in Jupyter. The initial collection/EDA notebook is `notebooks/01_collection_exploration.ipynb`; Q3 is `notebooks/02_q3_income_prices.ipynb`.
+3. Execute the notebooks from the repository root in Jupyter. The initial collection/EDA notebook is `notebooks/01_collection_exploration.ipynb`; Q3 is `notebooks/02_q3_income_prices.ipynb`; Q4 is `notebooks/02_q4_day_to_day_volatility.ipynb`.
 
    Q3 retrieves 2024 ACS 5-year income estimates at runtime from the [Census Reporter API](https://api.censusreporter.org/) and requires an internet connection.

@@ -20,6 +20,7 @@ This document records key technical, data cleaning, and modeling decisions made 
 | **D-03** | TBD | Chung Nguyên / Minh Trí | Unresolved capacity values (`0.0000`) in raw dataset. | Attempt regex extraction from product title via `src/parse_titles.py`; exclude remaining unresolved rows from unit-price (`USD/GB`, `USD/TB`) calculations. | 4,357 raw rows initially flagged with `0.0000` capacity. |
 | **D-04** | TBD | Chung Nguyên / Minh Trí | Non-component hardware (laptops / mini-PCs) misclassified under `ddr5_memory`. | Filter out full-system listings using keyword exclusion rules in `src/cleaning.py` and `src/parse_titles.py`. | 17 identified rows removed to prevent extreme right-skew in DDR5 price distributions. |
 | **D-05** | TBD | Đức Khải | Extreme price outliers in 32 GB DDR5 cohorts (Q5). | Evaluate outlier filter sensitivity (e.g., IQR vs. percentile clipping) before comparing `2x16 GB` and `1x32 GB` kits. | Documented in `02_q5_*.ipynb`. |
+| **D-09** | 2026-11-09 | Minh Trí | Q4 day-to-day volatility cohort definition. | Collapse duplicate observations to a daily median, then calculate within-product × ZIP standard deviation and coefficient of variation; require at least three observed dates and exclude flagged complete-system/NAS rows. | 8,735 cohorts remain (1,335 DDR5 and 7,400 NVMe). DDR5's median standard deviation is $4.74 versus effectively $0 for NVMe; results are descriptive for the 29-day snapshot. |
 
 ---
 
