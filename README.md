@@ -28,6 +28,8 @@
 ## Key Findings
 
 * **Q3 (preliminary):** After matching product title and date, ZIP-level adjusted price indices vary by only about −0.046% to +0.036% for DDR5 and −0.018% to +0.041% for NVMe. Income correlations are positive but uncertain across 12 ZIPs (Pearson *r*=0.319 for DDR5 and 0.373 for NVMe; both *p*>0.05). Treat this as a descriptive association, not causal evidence. See [the Q3 notebook](notebooks/02_q3_income_prices.ipynb) for methods, sensitivity checks, and limitations.
+* **Q5:** Within 32 GB DDR5 listings, the crude +\$90.00 (+\$2.81/GB) price gap between `2×16 GB` kits and `1×32 GB` single modules is largely a confounder artifact driven by desktop gaming UDIMMs vs. laptop SODIMMs. After controlling for form factor, speed, and brand (apple-to-apple 5600 MT/s SODIMM cohorts), the true `2×16 GB` kit premium shrinks by 85–88% to just **+\$10.57 to +\$14.48 (+2.6% to +3.9%)**, and even reverses to **−\$6.42** in entry-level 4800 MT/s desktop UDIMMs. See [the Q5 notebook](notebooks/02_q5_kit_comparison_clean.ipynb).
+* **Q6 (ML):** On 226 unseen hold-out products (23,483 rows), `HistGradientBoostingRegressor` predicts listing prices from parsed hardware specs with a row-level **MdAPE of 8.81%** (95% product-bootstrap CI: `[6.6%, 10.0%]`) and a product-level **MdAPE of 7.43%** (**4.9%** for DDR5, **8.9%** for NVMe), cutting median percentage error by **52.9%** relative to the `(category, capacity)` median baseline (**18.70%**). Grouped permutation importance shows **capacity (83.0%)** and **brand (8.8%)** dominate predictions, followed by **form factor (4.3%)** and **PCIe generation (2.9%)**. Adding `geography_id` (ZIP) and `observed_date` provides negligible gain ($\Delta\text{MAE}_{\log} = -0.0004$) because within-product variance across ZIPs and days accounts for only **0.32%** of total `log(price)` variance. See [the Q6 ML notebook](notebooks/03_ml_question.ipynb).
 
 ## How to Run
 
@@ -44,6 +46,11 @@
     python src/fetch_data.py
     ```
 
-3. Execute the notebooks from the repository root in Jupyter. The initial collection/EDA notebook is `notebooks/01_collection_exploration.ipynb`; Q3 is `notebooks/02_q3_income_prices.ipynb`.
+3. Execute the notebooks from the repository root in Jupyter:
+   - `notebooks/01_collection_exploration.ipynb` (data collection & EDA)
+   - `notebooks/02_q2_price_change_over_time.ipynb` (Q2 temporal cohorts)
+   - `notebooks/02_q3_income_prices.ipynb` (Q3 ZIP income vs. prices)
+   - `notebooks/02_q5_kit_comparison_clean.ipynb` (Q5 2×16 GB vs. 1×32 GB DDR5)
+   - `notebooks/03_ml_question.ipynb` (Q6 ML price prediction for unseen products)
 
    Q3 retrieves 2024 ACS 5-year income estimates at runtime from the [Census Reporter API](https://api.censusreporter.org/) and requires an internet connection.
