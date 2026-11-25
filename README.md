@@ -11,8 +11,15 @@
 ## Dataset
 
 * **Name:** DDR5 and NVMe Prices Raw Dataset (2026)
-* **Source:** CostInflation Team (Kaggle) - [Kaggle link](https://www.kaggle.com/datasets/costinflation/ddr5-and-nvme-prices-raw-dataset-2026)
+* **Original source:** CostInflation Team (Kaggle) — dataset removed from Kaggle in November 2026
+* **Current source:** [tri-trg/ddr5-nvme-prices-2026 on Hugging Face](https://huggingface.co/datasets/tri-trg/ddr5-nvme-prices-2026) (CC0 1.0, same file)
 * **License:** CC0 1.0
+
+### Dataset Availability Notice
+
+The original dataset was published on Kaggle by the CostInflation Team under a CC0 1.0 (public domain) license and was used as the data source for this project. In November 2026, the publisher removed the dataset from Kaggle, breaking the original download path in `src/fetch_data.py`.
+
+We verified that our local copy is intact using the SHA-256 checksum embedded in the fetch script (`9fb8f539...`). Because the CC0 license permits unrestricted redistribution, we re-hosted the unmodified CSV on Hugging Face Datasets under [`tri-trg/ddr5-nvme-prices-2026`](https://huggingface.co/datasets/tri-trg/ddr5-nvme-prices-2026). The fetch script was updated to download from Hugging Face via a direct HTTPS request — no account or credentials required. The original Kaggle downloader is preserved in `src/fetch_data.py` as `_legacy_kaggle_main()` for reference. SHA-256 verification runs regardless of the download path, so integrity guarantees remain unchanged.
 * **Timeframe:** July 21 – August 18, 2026 (29 days)
 * **Methodology & Limitations:** The team confirms prices are location-specific. Limitations include 4,357 unresolved-capacity rows and 17 laptop/mini-PC rows mixed into DDR5. ZIP-level income is matched to Census ZCTAs, which approximate but are not identical to USPS ZIP Codes; Q3 displays ACS income margins of error but does not propagate them into association intervals.
 
@@ -44,6 +51,8 @@
     ```bash
     python src/fetch_data.py
     ```
+
+    This downloads from [Hugging Face](https://huggingface.co/datasets/tri-trg/ddr5-nvme-prices-2026) (no credentials required). If the file is already present and verified, the script exits immediately.
 
 3. Execute the notebooks from the repository root in Jupyter. The initial collection/EDA notebook is `notebooks/01_collection_exploration.ipynb`; Q3 is `notebooks/02_q3_income_prices.ipynb`; Q4 is `notebooks/02_q4_day_to_day_volatility.ipynb`.
 
